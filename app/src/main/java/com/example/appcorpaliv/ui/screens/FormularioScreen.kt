@@ -3,6 +3,9 @@ package com.example.appcorpaliv.ui.screens
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -18,38 +21,37 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.appcorpaliv.navigation.Screen
 import com.example.appcorpaliv.ui.components.ImagenInteligente
+import com.example.appcorpaliv.viewmodel.FormularioViewModel
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FormularioScreen(navController: NavController) {
+fun FormularioScreen(
+    navController: NavController,
+    viewModel: FormularioViewModel = viewModel()
+) {
     val context = LocalContext.current
+    val state by viewModel.uiState.collectAsState()
 
-    // Estados de los campos del formulario
-    var nombre by remember { mutableStateOf("") }
-    var rut by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var telefono by remember { mutableStateOf("") }
-    var tipoDiscapacidad by remember { mutableStateOf("") }
-    var imagenUri by remember { mutableStateOf<Uri?>(null) }
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
 
-    // Selector de Galería
+    // Launcher Galería
     val galeriaLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        if (uri != null) imagenUri = uri
+        viewModel.onImagenUriChanged(uri?.toString())
     }
 
-    // Selector de Cámara
+    // Launcher Cámara
     val camaraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { exito: Boolean ->
         if (exito && tempCameraUri != null) {
-            imagenUri = tempCameraUri
+            viewModel.onImagenUriChanged(tempCameraUri.toString())
         }
     }
 
@@ -67,8 +69,7 @@ fun FormularioScreen(navController: NavController) {
             TopAppBar(
                 title = { Text("Registro de Beneficiario CORPALIV") },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
                 )
             )
         }
@@ -80,97 +81,115 @@ fun FormularioScreen(navController: NavController) {
                 .padding(20.dp)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Foto de perfil o logo
-            ImagenInteligente(imagenUri = imagenUri)
+            ImagenInteligente(imagenUri = state.imagenUri?.let { Uri.parse(it) })
 
-            // Botones de Galería y Cámara
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.padding(bottom = 8.dp)
-            ) {
-                OutlinedButton(
-                    onClick = { galeriaLauncher.launch("image/*") }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.PhotoLibrary,
-                        contentDescription = "Galería"
-                    )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedButton(onClick = { galeriaLauncher.launch("image/*") }) {
+                    Icon(Icons.Default.PhotoLibrary, contentDescription = null)
                     Spacer(modifier = Modifier.width(6.dp))
                     Text("Galería")
                 }
 
-                Button(
-                    onClick = {
-                        val uri = crearUriCamara()
-                        tempCameraUri = uri
-                        camaraLauncher.launch(uri)
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CameraAlt,
-                        contentDescription = "Cámara"
-                    )
+                Button(onClick = {
+                    val uri = crearUriCamara()
+                    tempCameraUri = uri
+                    camaraLauncher.launch(uri)
+                }) {
+                    Icon(Icons.Default.CameraAlt, contentDescription = null)
                     Spacer(modifier = Modifier.width(6.dp))
                     Text("Cámara")
                 }
             }
 
-            Divider()
+            Divider(modifier = Modifier.padding(vertical = 4.dp))
 
-            // Campos de texto
+            // Campo Nombre + Mensaje Animado
             OutlinedTextField(
-                value = nombre,
-                onValueChange = { nombre = it },
+                value = state.nombre,
+                onValueChange = { viewModel.onNombreChanged(it) },
                 label = { Text("Nombre Completo *") },
+                isError = state.errorNombre != null,
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
+            AnimatedVisibility(visible = state.errorNombre != null, enter = fadeIn(), exit = fadeOut()) {
+                Text(
+                    text = state.errorNombre ?: "",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
 
+            // Campo RUT + Mensaje Animado
             OutlinedTextField(
-                value = rut,
-                onValueChange = { rut = it },
+                value = state.rut,
+                onValueChange = { viewModel.onRutChanged(it) },
                 label = { Text("RUT (ej: 12345678-9) *") },
+                isError = state.errorRut != null,
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
+            AnimatedVisibility(visible = state.errorRut != null, enter = fadeIn(), exit = fadeOut()) {
+                Text(
+                    text = state.errorRut ?: "",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
 
+            // Campo Email + Mensaje Animado
             OutlinedTextField(
-                value = email,
-                onValueChange = { email = it },
+                value = state.email,
+                onValueChange = { viewModel.onEmailChanged(it) },
                 label = { Text("Correo Electrónico *") },
+                isError = state.errorEmail != null,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
+            AnimatedVisibility(visible = state.errorEmail != null, enter = fadeIn(), exit = fadeOut()) {
+                Text(
+                    text = state.errorEmail ?: "",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
 
+            // Campo Teléfono
             OutlinedTextField(
-                value = telefono,
-                onValueChange = { telefono = it },
+                value = state.telefono,
+                onValueChange = { viewModel.onTelefonoChanged(it) },
                 label = { Text("Teléfono de Contacto") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
 
+            // Campo Discapacidad
             OutlinedTextField(
-                value = tipoDiscapacidad,
-                onValueChange = { tipoDiscapacidad = it },
+                value = state.tipoDiscapacidad,
+                onValueChange = { viewModel.onTipoDiscapacidadChanged(it) },
                 label = { Text("Tipo de Discapacidad / Necesidad de Apoyo") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
+            // Botón que solo se habilita si el formulario es válido
             Button(
-                onClick = { navController.navigate(Screen.Catalogo.route) },
+                onClick = {
+                    viewModel.guardarBeneficiario()
+                    navController.navigate(Screen.Catalogo.route)
+                },
+                enabled = state.esValido,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp)
             ) {
-                Text("Continuar a Servicios e Iniciativas")
+                Text("Guardar y Continuar a Servicios")
             }
         }
     }
