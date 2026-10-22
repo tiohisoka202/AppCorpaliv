@@ -1,10 +1,15 @@
 package com.example.appcorpaliv.viewmodel
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.appcorpaliv.data.AppDatabase
+import com.example.appcorpaliv.data.BeneficiarioEntity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 class FormularioViewModel : ViewModel() {
 
@@ -61,9 +66,21 @@ class FormularioViewModel : ViewModel() {
         _uiState.update { it.copy(esValido = esValido) }
     }
 
-    fun guardarBeneficiario() {
+    fun guardarBeneficiario(context: Context) {
         if (_uiState.value.esValido) {
-            _uiState.update { it.copy(guardadoExitoso = true) }
+            viewModelScope.launch {
+                val db = AppDatabase.getDatabase(context)
+                val nuevoBeneficiario = BeneficiarioEntity(
+                    nombre = _uiState.value.nombre,
+                    rut = _uiState.value.rut,
+                    email = _uiState.value.email,
+                    telefono = _uiState.value.telefono,
+                    tipoDiscapacidad = _uiState.value.tipoDiscapacidad,
+                    imagenUri = _uiState.value.imagenUri
+                )
+                db.beneficiarioDao().insertarBeneficiario(nuevoBeneficiario)
+                _uiState.update { it.copy(guardadoExitoso = true) }
+            }
         }
     }
 }

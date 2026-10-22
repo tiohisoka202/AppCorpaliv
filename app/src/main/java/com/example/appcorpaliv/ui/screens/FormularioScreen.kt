@@ -181,7 +181,7 @@ fun FormularioScreen(
             // Botón que solo se habilita si el formulario es válido
             Button(
                 onClick = {
-                    viewModel.guardarBeneficiario()
+                    viewModel.guardarBeneficiario(context)
                     navController.navigate(Screen.Catalogo.route)
                 },
                 enabled = state.esValido,
