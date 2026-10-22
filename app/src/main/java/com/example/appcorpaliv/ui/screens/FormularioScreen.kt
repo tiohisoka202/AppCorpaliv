@@ -1,6 +1,9 @@
 package com.example.appcorpaliv.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
@@ -20,10 +23,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.appcorpaliv.navigation.Screen
 import com.example.appcorpaliv.ui.components.ImagenInteligente
 import com.example.appcorpaliv.viewmodel.FormularioViewModel
 import java.io.File
@@ -46,6 +49,16 @@ fun FormularioScreen(
         viewModel.onImagenUriChanged(uri?.toString())
     }
 
+    // Helper para generar URI temporal de la cámara
+    fun crearUriCamara(): Uri {
+        val file = File.createTempFile("foto_beneficiario_", ".jpg", context.cacheDir)
+        return FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.provider",
+            file
+        )
+    }
+
     // Launcher Cámara
     val camaraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
@@ -55,13 +68,21 @@ fun FormularioScreen(
         }
     }
 
-    fun crearUriCamara(): Uri {
-        val file = File.createTempFile("foto_beneficiario_", ".jpg", context.cacheDir)
-        return FileProvider.getUriForFile(
-            context,
-            "${context.packageName}.provider",
-            file
-        )
+    // Launcher para solicitar Permiso Nativo de Cámara dinámicamente
+    val permisoCamaraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            val uri = crearUriCamara()
+            tempCameraUri = uri
+            camaraLauncher.launch(uri)
+        } else {
+            Toast.makeText(
+                context,
+                "Se requiere permiso de la cámara para tomar fotos",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 
     Scaffold(
@@ -93,9 +114,19 @@ fun FormularioScreen(
                 }
 
                 Button(onClick = {
-                    val uri = crearUriCamara()
-                    tempCameraUri = uri
-                    camaraLauncher.launch(uri)
+                    // Verificación en tiempo real del permiso de Cámara
+                    val tienePermiso = ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.CAMERA
+                    ) == PackageManager.PERMISSION_GRANTED
+
+                    if (tienePermiso) {
+                        val uri = crearUriCamara()
+                        tempCameraUri = uri
+                        camaraLauncher.launch(uri)
+                    } else {
+                        permisoCamaraLauncher.launch(Manifest.permission.CAMERA)
+                    }
                 }) {
                     Icon(Icons.Default.CameraAlt, contentDescription = null)
                     Spacer(modifier = Modifier.width(6.dp))
@@ -178,11 +209,11 @@ fun FormularioScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Botón que solo se habilita si el formulario es válido
+            // Botón de guardado y navegación segura
             Button(
                 onClick = {
                     viewModel.guardarBeneficiario(context)
-                    navController.navigate(Screen.Catalogo.route)
+                    navController.navigate("catalogo_screen")
                 },
                 enabled = state.esValido,
                 modifier = Modifier
