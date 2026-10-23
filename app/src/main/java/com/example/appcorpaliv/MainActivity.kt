@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -18,12 +20,21 @@ import androidx.navigation.compose.rememberNavController
 import com.example.appcorpaliv.ui.screens.CatalogoScreen
 import com.example.appcorpaliv.ui.screens.ContactoEmpresaScreen
 import com.example.appcorpaliv.ui.screens.FormularioScreen
+import com.example.appcorpaliv.ui.theme.AppCorpalivTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            AppNavigation()
+            // ENVOLVEMOS TODA LA NAVEGACIÓN EN EL TEMA
+            AppCorpalivTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    AppNavigation()
+                }
+            }
         }
     }
 }
