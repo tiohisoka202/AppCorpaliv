@@ -1,17 +1,27 @@
-# App CORPALIV / Alba Lab - DSY1105
+# AppCorpaliv - Alba Lab
 
-Hola! Este es nuestro proyecto para el caso de CORPALIV y Alba Lab. La app busca ayudar en la inclusión social y laboral de personas con distintas discapacidades mediante una interfaz sencilla y fácil de usar.
+Aplicación móvil desarrollada en Android para apoyar la gestión de **CORPALIV (Alba Lab)**, permitiendo registrar beneficiarios, recibir solicitudes de alianza de empresas y consultar los servicios e iniciativas disponibles.
 
-## 📱 ¿Qué pantallas y funciones tenemos creadas?
+## ¿Qué hace la app?
 
-- **Inicio (`HomeScreen`):** Es la portada de la app donde se explica brevemente la misión de CORPALIV y tiene el botón para ir al registro.
-- **Formulario (`FormularioScreen`):** Es donde la persona ingresa sus datos (Nombre, RUT, Correo) y puede pulsar un botón para subir su foto desde la galería del celular.
-- **Catálogo (`CatalogoScreen`):** Muestra una lista con los servicios y talleres que ofrece la fundación (como talleres multisensoriales y capacitaciones laboral).
-- **Navegación (`AppNavigation`):** Conecta todas las pantallas para que al presionar los botones se pase de una vista a otra sin problemas.
+* **Registro de Beneficiarios:** Formulario con validación de datos (nombre, RUT, correo, teléfono) y opción para adjuntar una foto desde la cámara o galería del teléfono.
+* **Vinculación Empresarial:** Formulario para que empresas o instituciones puedan solicitar alianzas de inclusión laboral (RSE) o capacitaciones.
+* **Catálogo de Servicios:** Pantalla que muestra las iniciativas, programas y servicios disponibles en tiempo real.
+* **Respaldo sin conexión:** Si no hay conexión al servidor al registrar un beneficiario, los datos quedan guardados localmente en el teléfono.
 
-## 🙋‍♂️ Lo que avancé hasta el momento (Javier)
+## Tecnologías usadas
 
-- Creé el proyecto en Android Studio y ordené las carpetas según lo pedido en la asignatura (data, model, navigation, ui, viewmodel).
-- Hice los diseños de las pantallas de Inicio, Catálogo y la vista del Formulario.
-- Agregué el archivo de rutas para cambiar entre pantallas.
-- Agregué el componente para poder elegir una imagen desde el teléfono usando Coil.para elegir imagen de perfil desde el dispositivo.
+* **Lenguaje:** Kotlin
+* **Interfaz:** Jetpack Compose
+* **Arquitectura:** MVVM (ViewModel + StateFlow) y Navigation Compose
+* **Conexión a backend:** Retrofit (conectado a los microservicios `ms-vinculacion` y `ms-contenidos`)
+* **Base de datos local:** Room (SQLite)
+* **Pruebas:** JUnit 4 y MockK
+
+## Estructura del proyecto
+
+* `navigation/`: Manejo de rutas entre pantallas (`Screen.kt`).
+* `network/`: Configuración de Retrofit, modelos de datos y llamadas a los microservicios.
+* `data/`: Base de datos local con Room (`AppDatabase`, entidades y DAOs).
+* `viewmodel/`: Lógica de negocio y estados de los formularios.
+* `ui/screens/`: Pantallas principales (`HomeScreen`, `FormularioScreen`, `ContactoEmpresaScreen`, `CatalogoScreen`).
