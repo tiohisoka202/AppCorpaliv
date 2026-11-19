@@ -3,6 +3,7 @@ package com.example.appcorpaliv.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Person
@@ -62,7 +63,7 @@ fun HomeScreen(navController: NavController) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(modifier = Modifier.height(36.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
             // Botón 1: Registro de Beneficiarios
             Button(
@@ -123,6 +124,28 @@ fun HomeScreen(navController: NavController) {
                 Spacer(modifier = Modifier.width(10.dp))
                 Text(
                     text = "Iniciativas y Servicios",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Botón 4: Aportes y Donaciones
+            FilledTonalButton(
+                onClick = { navController.navigate(Screen.Donaciones.route) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Favorite,
+                    contentDescription = "Ir a donaciones"
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "Aportes y Donaciones",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold
                 )

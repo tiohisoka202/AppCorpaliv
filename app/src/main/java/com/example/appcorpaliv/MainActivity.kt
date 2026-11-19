@@ -14,6 +14,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.appcorpaliv.navigation.Screen
 import com.example.appcorpaliv.ui.screens.CatalogoScreen
 import com.example.appcorpaliv.ui.screens.ContactoEmpresaScreen
+import com.example.appcorpaliv.ui.screens.DonacionesScreen
 import com.example.appcorpaliv.ui.screens.FormularioScreen
 import com.example.appcorpaliv.ui.screens.HomeScreen
 import com.example.appcorpaliv.ui.theme.AppCorpalivTheme
@@ -47,7 +48,7 @@ fun AppNavigation() {
             HomeScreen(navController = navController)
         }
 
-        // Formulario 1: Beneficiarios (pantalla limpia sin botón superpuesto)
+        // Formulario 1: Beneficiarios
         composable(Screen.Formulario.route) {
             FormularioScreen(navController = navController)
         }
@@ -55,6 +56,15 @@ fun AppNavigation() {
         // Formulario 2: Contacto Empresas
         composable(Screen.ContactoEmpresa.route) {
             ContactoEmpresaScreen(
+                onVolverClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // Pantalla de Donaciones
+        composable(Screen.Donaciones.route) {
+            DonacionesScreen(
                 onVolverClick = {
                     navController.popBackStack()
                 }
