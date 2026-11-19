@@ -1,10 +1,13 @@
 package com.example.appcorpaliv.viewmodel
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.appcorpaliv.data.AppDatabase
 import com.example.appcorpaliv.data.BeneficiarioEntity
+import com.example.appcorpaliv.network.RetrofitClient
+import com.example.appcorpaliv.network.SolicitudColaboracionDto
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -69,16 +72,35 @@ class FormularioViewModel : ViewModel() {
     fun guardarBeneficiario(context: Context) {
         if (_uiState.value.esValido) {
             viewModelScope.launch {
+                val stateActual = _uiState.value
+
+                // 1. Persistencia local en Room
                 val db = AppDatabase.getDatabase(context)
                 val nuevoBeneficiario = BeneficiarioEntity(
-                    nombre = _uiState.value.nombre,
-                    rut = _uiState.value.rut,
-                    email = _uiState.value.email,
-                    telefono = _uiState.value.telefono,
-                    tipoDiscapacidad = _uiState.value.tipoDiscapacidad,
-                    imagenUri = _uiState.value.imagenUri
+                    nombre = stateActual.nombre,
+                    rut = stateActual.rut,
+                    email = stateActual.email,
+                    telefono = stateActual.telefono,
+                    tipoDiscapacidad = stateActual.tipoDiscapacidad,
+                    imagenUri = stateActual.imagenUri
                 )
                 db.beneficiarioDao().insertarBeneficiario(nuevoBeneficiario)
+
+                // 2. Sincronización con microservicio ms-vinculacion (puerto 9092)
+                try {
+                    val solicitudRemota = SolicitudColaboracionDto(
+                        nombreContacto = stateActual.nombre,
+                        rutOOrganizacion = stateActual.rut,
+                        email = stateActual.email,
+                        telefono = stateActual.telefono.ifBlank { null },
+                        tipoColaboracion = "REGISTRO_BENEFICIARIO",
+                        mensaje = "Apoyo requerido: ${stateActual.tipoDiscapacidad.ifBlank { "No especificado" }}"
+                    )
+                    RetrofitClient.vinculacionApi.crearSolicitud(solicitudRemota)
+                } catch (e: Exception) {
+                    Log.e("CorpalivAPI", "No se pudo sincronizar con ms-vinculacion: ${e.message}")
+                }
+
                 _uiState.update { it.copy(guardadoExitoso = true) }
             }
         }

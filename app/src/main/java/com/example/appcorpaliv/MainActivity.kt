@@ -3,30 +3,25 @@ package com.example.appcorpaliv
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.appcorpaliv.navigation.Screen
 import com.example.appcorpaliv.ui.screens.CatalogoScreen
 import com.example.appcorpaliv.ui.screens.ContactoEmpresaScreen
 import com.example.appcorpaliv.ui.screens.FormularioScreen
+import com.example.appcorpaliv.ui.screens.HomeScreen
 import com.example.appcorpaliv.ui.theme.AppCorpalivTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            // ENVOLVEMOS TODA LA NAVEGACIÓN EN EL TEMA
             AppCorpalivTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -45,26 +40,20 @@ fun AppNavigation() {
 
     NavHost(
         navController = navController,
-        startDestination = "formulario_beneficiarios"
+        startDestination = Screen.Home.route
     ) {
-        // Formulario 1: Beneficiarios
-        composable("formulario_beneficiarios") {
-            Box(modifier = Modifier.fillMaxSize()) {
-                FormularioScreen(navController = navController)
+        // Pantalla de Inicio
+        composable(Screen.Home.route) {
+            HomeScreen(navController = navController)
+        }
 
-                Button(
-                    onClick = { navController.navigate("contacto_empresas") },
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(16.dp)
-                ) {
-                    Text("Ir a Contacto Empresas ➔")
-                }
-            }
+        // Formulario 1: Beneficiarios (pantalla limpia sin botón superpuesto)
+        composable(Screen.Formulario.route) {
+            FormularioScreen(navController = navController)
         }
 
         // Formulario 2: Contacto Empresas
-        composable("contacto_empresas") {
+        composable(Screen.ContactoEmpresa.route) {
             ContactoEmpresaScreen(
                 onVolverClick = {
                     navController.popBackStack()
@@ -72,8 +61,8 @@ fun AppNavigation() {
             )
         }
 
-        // CatalogoScreen configurado con navController
-        composable("catalogo_screen") {
+        // Catálogo de Iniciativas y Servicios
+        composable(Screen.Catalogo.route) {
             CatalogoScreen(navController = navController)
         }
     }

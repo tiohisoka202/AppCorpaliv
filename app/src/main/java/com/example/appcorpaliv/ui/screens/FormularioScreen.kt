@@ -6,27 +6,31 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.appcorpaliv.navigation.Screen
 import com.example.appcorpaliv.ui.components.ImagenInteligente
 import com.example.appcorpaliv.viewmodel.FormularioViewModel
 import java.io.File
@@ -41,6 +45,7 @@ fun FormularioScreen(
     val state by viewModel.uiState.collectAsState()
 
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
+    var enviando by remember { mutableStateOf(false) }
 
     // Launcher Galería
     val galeriaLauncher = rememberLauncherForActivityResult(
@@ -85,12 +90,76 @@ fun FormularioScreen(
         }
     }
 
+    // Diálogo de confirmación cuando Room y Retrofit terminan de guardar
+    if (state.guardadoExitoso) {
+        AlertDialog(
+            onDismissRequest = { },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.CheckCircle,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(40.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "Registro Completado",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "Los datos de ${state.nombre} (RUT: ${state.rut}) se guardaron localmente y se enviaron a CORPALIV."
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        enviando = false
+                        navController.navigate(Screen.Catalogo.route) {
+                            popUpTo(Screen.Home.route)
+                        }
+                    }
+                ) {
+                    Text("Ver Servicios")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        enviando = false
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Home.route) { inclusive = true }
+                        }
+                    }
+                ) {
+                    Text("Ir al Inicio")
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Registro de Beneficiario CORPALIV") },
+                title = {
+                    Text(
+                        text = "Registro de Beneficiario",
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Volver atrás"
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             )
         }
@@ -99,94 +168,112 @@ fun FormularioScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(20.dp)
+                .padding(horizontal = 20.dp, vertical = 16.dp)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            ImagenInteligente(imagenUri = state.imagenUri?.let { Uri.parse(it) })
+            // Tarjeta de fotografía / documento
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    ImagenInteligente(imagenUri = state.imagenUri?.let { Uri.parse(it) })
 
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedButton(onClick = { galeriaLauncher.launch("image/*") }) {
-                    Icon(Icons.Default.PhotoLibrary, contentDescription = null)
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Galería")
-                }
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedButton(onClick = { galeriaLauncher.launch("image/*") }) {
+                            Icon(Icons.Default.PhotoLibrary, contentDescription = null)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Galería")
+                        }
 
-                Button(onClick = {
-                    // Verificación en tiempo real del permiso de Cámara
-                    val tienePermiso = ContextCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.CAMERA
-                    ) == PackageManager.PERMISSION_GRANTED
+                        Button(onClick = {
+                            val tienePermiso = ContextCompat.checkSelfPermission(
+                                context,
+                                Manifest.permission.CAMERA
+                            ) == PackageManager.PERMISSION_GRANTED
 
-                    if (tienePermiso) {
-                        val uri = crearUriCamara()
-                        tempCameraUri = uri
-                        camaraLauncher.launch(uri)
-                    } else {
-                        permisoCamaraLauncher.launch(Manifest.permission.CAMERA)
+                            if (tienePermiso) {
+                                val uri = crearUriCamara()
+                                tempCameraUri = uri
+                                camaraLauncher.launch(uri)
+                            } else {
+                                permisoCamaraLauncher.launch(Manifest.permission.CAMERA)
+                            }
+                        }) {
+                            Icon(Icons.Default.CameraAlt, contentDescription = null)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Cámara")
+                        }
+
+                        if (state.imagenUri != null) {
+                            IconButton(onClick = { viewModel.onImagenUriChanged(null) }) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Quitar foto",
+                                    tint = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
                     }
-                }) {
-                    Icon(Icons.Default.CameraAlt, contentDescription = null)
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Cámara")
                 }
             }
 
-            Divider(modifier = Modifier.padding(vertical = 4.dp))
-
-            // Campo Nombre + Mensaje Animado
+            // Campo Nombre con supportingText nativo
             OutlinedTextField(
                 value = state.nombre,
                 onValueChange = { viewModel.onNombreChanged(it) },
                 label = { Text("Nombre Completo *") },
                 isError = state.errorNombre != null,
+                supportingText = {
+                    state.errorNombre?.let { Text(text = it) }
+                },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
             )
-            AnimatedVisibility(visible = state.errorNombre != null, enter = fadeIn(), exit = fadeOut()) {
-                Text(
-                    text = state.errorNombre ?: "",
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
 
-            // Campo RUT + Mensaje Animado
+            // Campo RUT con supportingText nativo
             OutlinedTextField(
                 value = state.rut,
                 onValueChange = { viewModel.onRutChanged(it) },
                 label = { Text("RUT (ej: 12345678-9) *") },
                 isError = state.errorRut != null,
+                supportingText = {
+                    state.errorRut?.let { Text(text = it) }
+                },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
             )
-            AnimatedVisibility(visible = state.errorRut != null, enter = fadeIn(), exit = fadeOut()) {
-                Text(
-                    text = state.errorRut ?: "",
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
 
-            // Campo Email + Mensaje Animado
+            // Campo Email con supportingText nativo
             OutlinedTextField(
                 value = state.email,
                 onValueChange = { viewModel.onEmailChanged(it) },
                 label = { Text("Correo Electrónico *") },
                 isError = state.errorEmail != null,
+                supportingText = {
+                    state.errorEmail?.let { Text(text = it) }
+                },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
             )
-            AnimatedVisibility(visible = state.errorEmail != null, enter = fadeIn(), exit = fadeOut()) {
-                Text(
-                    text = state.errorEmail ?: "",
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
 
             // Campo Teléfono
             OutlinedTextField(
@@ -195,7 +282,8 @@ fun FormularioScreen(
                 label = { Text("Teléfono de Contacto") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
             )
 
             // Campo Discapacidad
@@ -204,23 +292,39 @@ fun FormularioScreen(
                 onValueChange = { viewModel.onTipoDiscapacidadChanged(it) },
                 label = { Text("Tipo de Discapacidad / Necesidad de Apoyo") },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp)
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-            // Botón de guardado y navegación segura
+            // Botón de guardado con estado de carga
             Button(
                 onClick = {
+                    enviando = true
                     viewModel.guardarBeneficiario(context)
-                    navController.navigate("catalogo_screen")
                 },
-                enabled = state.esValido,
+                enabled = state.esValido && !enviando,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp)
+                    .height(52.dp),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Guardar y Continuar a Servicios")
+                if (enviando && !state.guardadoExitoso) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(22.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text("Guardando registro...", fontSize = 15.sp)
+                } else {
+                    Text(
+                        text = "Guardar y Continuar a Servicios",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
             }
         }
     }

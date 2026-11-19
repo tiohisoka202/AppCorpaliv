@@ -1,6 +1,11 @@
 package com.example.appcorpaliv.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -18,7 +23,12 @@ fun HomeScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("CORPALIV - Alba Lab") },
+                title = {
+                    Text(
+                        text = "CORPALIV - Alba Lab",
+                        fontWeight = FontWeight.Bold
+                    )
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -36,28 +46,86 @@ fun HomeScreen(navController: NavController) {
         ) {
             Text(
                 text = "Inclusión Social y Laboral",
-                fontSize = 24.sp,
+                fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.primary
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             Text(
                 text = "Bienvenido a la plataforma de CORPALIV / Alba Lab, orientada al desarrollo de herramientas accesibles para personas con múltiples discapacidades.",
-                fontSize = 16.sp,
+                fontSize = 15.sp,
+                lineHeight = 22.sp,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(36.dp))
 
+            // Botón 1: Registro de Beneficiarios
             Button(
                 onClick = { navController.navigate(Screen.Formulario.route) },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Ir al Formulario de Registro")
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "Ir al formulario de beneficiarios"
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "Formulario de Beneficiarios",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Botón 2: Contacto Empresas
+            FilledTonalButton(
+                onClick = { navController.navigate(Screen.ContactoEmpresa.route) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Home,
+                    contentDescription = "Ir al formulario de empresas"
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "Formulario de Empresas",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Botón 3: Iniciativas y Servicios (Catálogo)
+            OutlinedButton(
+                onClick = { navController.navigate(Screen.Catalogo.route) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Info,
+                    contentDescription = "Ver iniciativas y servicios"
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "Iniciativas y Servicios",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
     }
